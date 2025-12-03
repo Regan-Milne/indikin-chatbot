@@ -1,94 +1,201 @@
-# Indikin RAG-Enhanced Chatbot
+# Indikin RAG Chatbot (Qwen-Powered)
 
-A RAG-powered chatbot that answers questions about Indikin using real-time streaming and document knowledge retrieval. Built with the Qwen model via OpenRouter API.
+This repository contains a Retrieval-Augmented Generation (RAG) chatbot designed for the Indikin platform.
+It uses:
 
-## Features
+* Qwen3 235B A22B Instruct (OpenRouter) for generation
+* OpenAI text-embedding-3-small for embeddings
+* Local JSON-based vector store (easily swappable for Supabase pgvector)
 
-🧠 **RAG-Enhanced Responses** - Answers questions using Indikin research documents
-🚀 **Real-time Streaming** - Responses appear as they're generated  
-🎬 **Filmmaker-Friendly Voice** - Ted Hope-inspired tone for indie film community
-📊 **Usage Tracking** - Monitor tokens and costs
-🔄 **Toggle RAG** - Enable/disable document retrieval on demand
+The project provides a complete, working reference implementation of a modern RAG pipeline — chunking, embeddings, similarity search, context injection, and LLM response.
 
-## Quick Start
+## ✨ Features
 
-1. **Get an OpenRouter API Key**
-   - Visit [https://openrouter.ai/](https://openrouter.ai/)
-   - Sign up for an account and generate an API key
+* End-to-end RAG pipeline
+* Qwen-powered chatbot with markdown formatting
+* Chunking + embedding of Indikin research documents
+* Local vector store (processed_documents.json) for easy testing
+* Swappable embedding providers (OpenAI or local)
+* Swappable generation providers (OpenRouter → Qwen)
+* Optional Supabase integration for production deployment
+* Clear code structure for easy modification or extension
 
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+This repository is meant as a developer-friendly blueprint:
+You can run everything locally OR integrate with Supabase / your production backend.
 
-3. **Configure Environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your OpenRouter API key
-   ```
-
-4. **Process Documents** (Already done - skip if using provided data)
-   ```bash
-   node document-processor.js data/documents/
-   ```
-
-5. **Start Chatting**
-   ```bash
-   npm start          # RAG-enhanced chatbot
-   npm run basic      # Basic chatbot without RAG
-   ```
-
-## Usage Commands
-
-- **Chat**: Type your questions about Indikin
-- **`cost`**: Show usage statistics  
-- **`rag off`**: Disable RAG, use only base model
-- **`rag on`**: Re-enable RAG document retrieval
-- **`exit`** or **`quit`**: End conversation
-
-## Architecture
-
+## 📂 Project Structure
 ```
-Research Documents → Chunking → Embeddings → Local JSON Storage
-                                                     ↓
-User Question → RAG Search → Context Retrieval → Qwen Model → Streaming Response
+data/
+  documents/
+    Indikin_research.md         # Base knowledge document
+node_modules/
+
+.env.example                    # Environment variables template
+.env                            # (ignored) Populate with API keys
+
+document-processor.js           # Loads & normalizes markdown documents
+document-chunker.js             # Splits documents into chunks
+embedding-client.js             # Embeds chunks via OpenAI
+processed_documents.json        # Final RAG knowledge base (local)
+
+local-rag-test.js               # Simple local similarity search tester
+openrouter-client.js            # Qwen model wrapper for generation
+rag-chatbot.js                  # Full RAG chatbot pipeline
+chatbot.js                      # Non-RAG fallback chatbot
+
+package.json
+README.md
 ```
 
-## Supabase Integration (Optional)
+## 🚀 Getting Started
 
-This system currently uses local JSON storage for vector search. To use Supabase:
+### 1. Install dependencies
+```bash
+npm install
+```
 
-1. **Set up Supabase Project**
-   - Create project at [supabase.com](https://supabase.com)
-   - Enable `pgvector` extension
-   - Set up document storage schema
+### 2. Create your .env
+```bash
+cp .env.example .env
+```
 
-2. **Add Supabase Credentials**
-   ```bash
-   # Add to your .env file:
-   SUPABASE_URL=your_supabase_project_url
-   SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+Then fill in:
+```
+OPENROUTER_API_KEY=your-key-here
+OPENROUTER_MODEL=qwen/qwen-3-235b-a22b-instruct-2507
 
-3. **Implement Upload Script** (Community contribution welcome!)
-   - Use `processed_documents.json` as source data
-   - Upload chunks with embeddings to Supabase
-   - Modify RAG search to query Supabase instead of local JSON
+EMBEDDING_PROVIDER=openai
+EMBEDDING_MODEL=text-embedding-3-small
+OPENAI_API_KEY=your-openai-key
+```
 
-## Files
+(Only the embedding model uses OpenAI — cost is pennies.)
 
-- `rag-chatbot.js` - RAG-enhanced chatbot with streaming
-- `chatbot.js` - Basic chatbot without RAG  
-- `document-processor.js` - Chunk documents and create embeddings
-- `document-chunker.js` - Smart markdown-aware text chunking
-- `embedding-client.js` - OpenAI embeddings via OpenRouter
-- `local-rag-test.js` - Test RAG retrieval locally
-- `openrouter-client.js` - OpenRouter API client with streaming
-- `processed_documents.json` - Processed document chunks with embeddings
-- `data/documents/` - Source research documents
+## 🧠 Running the Chatbot (RAG Mode)
 
-## Model & Costs
+Start the RAG-enhanced chatbot:
 
-- **LLM**: `qwen/qwen3-235b-a22b-2507` via OpenRouter
-- **Embeddings**: `openai/text-embedding-3-small` (~$0.00002/1K tokens)
-- **Chunking**: 145 chunks, ~1,100 chars each, optimized for Qwen context window
+```bash
+node rag-chatbot.js
+```
+
+You'll see:
+
+```
+🤖 Indikin RAG-Enhanced Chatbot
+📚 Loaded knowledge about Indikin
+Type 'exit' to quit
+```
+
+Examples you can try:
+
+* tell me about Indikin
+* how do filmmaker tokens work?
+* what films are available?
+* what is the mission of Indikin?
+
+## 🧩 How the RAG Pipeline Works
+```
+Indikin_research.md
+   ↓
+document-processor.js
+   ↓
+document-chunker.js
+   ↓
+embedding-client.js
+   ↓
+processed_documents.json    ← stored locally
+   ↓
+rag-chatbot.js
+   ↓
+Qwen model
+```
+
+**Chunking details:**
+* Chunk size: ~1,000 chars
+* Overlap: ~200 chars
+* Markdown-aware splitting
+
+**Retrieval:**
+* Embed user query
+* Compare to stored embeddings
+* Return top-k relevant chunks
+
+**Generation:**
+* Inject context → Qwen model
+* Model produces grounded answer
+
+## 🔧 Rebuilding the RAG Knowledge Base
+
+If you update the Indikin research document or add new sources, run:
+
+```bash
+node document-processor.js
+node document-chunker.js
+node embedding-client.js
+```
+
+This regenerates processed_documents.json.
+
+## 🗄️ Optional: Using Supabase (Production Setup)
+
+This repo ships with a local JSON vector store, but you can easily replace it with Supabase pgvector.
+
+Basic SQL schema:
+
+```sql
+create extension if not exists vector;
+
+create table documents (
+  id uuid primary key default gen_random_uuid(),
+  content text not null,
+  embedding vector(1536),
+  doc_type text,
+  title text,
+  section text,
+  url text
+);
+
+create index on documents using ivfflat (embedding vector_cosine_ops);
+```
+
+Then modify the retrieval logic in local-rag-test.js or rag-chatbot.js to query Supabase instead of the local file.
+
+If you want, you can also move:
+* chunk embeddings
+* metadata
+* film data
+* platform docs
+
+…into Supabase for long-term scaling.
+
+## 🧪 Local RAG Testing Utility
+
+You can manually test retrieval WITHOUT calling Qwen:
+
+```bash
+node local-rag-test.js
+```
+
+This prints:
+* query embedding
+* retrieved chunk IDs
+* chunk content previews
+
+Useful for evaluating chunk quality and RAG effectiveness.
+
+## 🤝 Developer Notes
+
+* This repository is a working reference implementation.
+* You can extend, replace, or productionize any layer (RAG, LLM provider, embeddings, or vector DB).
+* Supabase integration is optional and can be added easily.
+* The entire architecture is provider-agnostic and modular.
+
+## 📝 License
+
+MIT — feel free to use, modify, and extend.
+
+## 🙌 Credits
+
+Developed by Regan Milne as part of an AI assistant prototype for Indikin.
+Includes a full RAG pipeline, embeddings, Qwen integration, and knowledge-base processing.
