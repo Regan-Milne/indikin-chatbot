@@ -46,3 +46,6 @@ node_modules/
 .idea/
 *.swp
 *.swo
+
+# Project documentation (internal)
+project-status-report.md
